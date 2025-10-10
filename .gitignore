@@ -1,0 +1,7 @@
+﻿node_modules
+public
+*.pem
+package.json
+package-lock.json
+vite.config.js
+.vite
