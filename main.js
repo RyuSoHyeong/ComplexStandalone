@@ -192,10 +192,16 @@ function startApp() {
             return;
         }
         GlassTop.findComponents('render').forEach(function (r) {
-            r.material = ReflectMat;
+            if (r.meshInstances && r.meshInstances.length) {
+                r.meshInstances.forEach(function (mi) {
+                    mi.material = ReflectMat;
+                });
+            } else {
+                r.material = ReflectMat;
+            }
         });
         Root.addChild(GlassTop);
-        GlassTop.setPosition(0.5, 1.335, 1.281);
+        GlassTop.setPosition(0.5, 1.33, 1.281);
         GlassTop.setEulerAngles(0, 90, 0);
         GlassTop.setLocalScale(0.00385, 0.00385, 0.00385);
 
