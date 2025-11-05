@@ -106,7 +106,7 @@ function startApp() {
                 cubemap: true,
                 width: size,
                 height: size,
-                format: pc.PIXELFORMAT_RGBA8,
+                format: pc.PIXELFORMAT_RGB8,
                 mipmaps: true
             });
 
