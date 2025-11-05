@@ -94,6 +94,7 @@ export async function loadAssets(app, assetList, onComplete, onProgress) {
     const originalXHRSend = XMLHttpRequest.prototype.send;
     
     let activeRequests = new Set();
+    let requestProgress = new Map();
     
     XMLHttpRequest.prototype.open = function(method, url, ...args) {
         this._url = url;
@@ -101,25 +102,57 @@ export async function loadAssets(app, assetList, onComplete, onProgress) {
     };
     
     XMLHttpRequest.prototype.send = function(...args) {
-        if (this._url && assetList.some(({ asset }) => 
-            asset.file?.url.includes(this._url) || this._url.includes(asset.name))) {
+        if (this._url) {
+            const assetInfo = assetList.find(({ asset }) => 
+                asset.file?.url.includes(this._url) || 
+                this._url.includes(asset.name) ||
+                this._url === asset.file?.url
+            );
             
-            let lastLoaded = 0;
-            const request = this;
-            
-            this.addEventListener('progress', (event) => {
-                if (event.lengthComputable) {
-                    const delta = event.loaded - lastLoaded;
-                    lastLoaded = event.loaded;
-                    bump(delta);
-                }
-            });
-            
-            this.addEventListener('loadend', () => {
-                activeRequests.delete(request);
-            });
-            
-            activeRequests.add(this);
+            if (assetInfo) {
+                const { asset, size } = assetInfo;
+                let lastLoaded = 0;
+                const request = this;
+                
+                requestProgress.set(this._url, 0);
+                
+                this.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const delta = event.loaded - lastLoaded;
+                        lastLoaded = event.loaded;
+                        bump(delta);
+                        requestProgress.set(this._url, event.loaded);
+                    } else {
+                        const estimatedDelta = (size || 1024 * 1024) * 0.05;
+                        bump(estimatedDelta);
+                        requestProgress.set(this._url, (requestProgress.get(this._url) || 0) + estimatedDelta);
+                    }
+                });
+                
+                this.addEventListener('load', () => {
+                    const currentProgress = requestProgress.get(this._url) || 0;
+                    const remaining = Math.max(0, (size || 0) - currentProgress);
+                    if (remaining > 0) {
+                        bump(remaining);
+                    }
+                    requestProgress.set(this._url, size || 0);
+                });
+                
+                this.addEventListener('error', () => {
+                    const currentProgress = requestProgress.get(this._url) || 0;
+                    const remaining = Math.max(0, (size || 0) - currentProgress);
+                    if (remaining > 0) {
+                        bump(remaining);
+                    }
+                });
+                
+                this.addEventListener('loadend', () => {
+                    activeRequests.delete(request);
+                    requestProgress.delete(this._url);
+                });
+                
+                activeRequests.add(this);
+            }
         }
         
         return originalXHRSend.call(this, ...args);
@@ -141,12 +174,26 @@ export async function loadAssets(app, assetList, onComplete, onProgress) {
             });
         }));
         
-        while (activeRequests.size > 0) {
+        let maxWaitTime = 30000;
+        let waited = 0;
+        while (activeRequests.size > 0 && waited < maxWaitTime) {
             await new Promise(resolve => setTimeout(resolve, 100));
+            waited += 100;
         }
+        
+        if (activeRequests.size > 0) {
+            console.warn('Some requests did not complete, forcing progress to 100%');
+            const remainingBytes = totalBytes - loadedBytes;
+            if (remainingBytes > 0) {
+                bump(remainingBytes);
+            }
+        }
+        
     } finally {
         XMLHttpRequest.prototype.open = originalXHROpen;
         XMLHttpRequest.prototype.send = originalXHRSend;
+        activeRequests.clear();
+        requestProgress.clear();
     }
 
     onProgress?.(1);
