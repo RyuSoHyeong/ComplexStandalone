@@ -82,8 +82,7 @@ export async function prewarmSOGS(metaUrl, onProgress) {
 }
 
 export async function loadAssets(app, assetList, onComplete, onProgress) {
-    let totalBytes = assetList.reduce((sum, a) =>
-    sum + ((a.asset.type === 'gsplat') ? 0 : (a.size || 0)), 0);
+    let totalBytes = assetList.reduce((sum, a) => sum + (a.size || 0), 0);
     let loadedBytes = 0;
 
     const bump = (delta) => {
@@ -91,29 +90,64 @@ export async function loadAssets(app, assetList, onComplete, onProgress) {
         onProgress?.(Math.min(loadedBytes / Math.max(totalBytes, 1), 1));
     };
 
-    await Promise.all(assetList.map(async ({ asset, size }) => {
-        if (asset.type === 'gsplat') {
-            if (!app.assets.get(asset.id)) app.assets.add(asset);
+    const originalXHROpen = XMLHttpRequest.prototype.open;
+    const originalXHRSend = XMLHttpRequest.prototype.send;
+    
+    let activeRequests = new Set();
+    
+    XMLHttpRequest.prototype.open = function(method, url, ...args) {
+        this._url = url;
+        return originalXHROpen.call(this, method, url, ...args);
+    };
+    
+    XMLHttpRequest.prototype.send = function(...args) {
+        if (this._url && assetList.some(({ asset }) => 
+            asset.file?.url.includes(this._url) || this._url.includes(asset.name))) {
+            
+            let lastLoaded = 0;
+            const request = this;
+            
+            this.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const delta = event.loaded - lastLoaded;
+                    lastLoaded = event.loaded;
+                    bump(delta);
+                }
+            });
+            
+            this.addEventListener('loadend', () => {
+                activeRequests.delete(request);
+            });
+            
+            activeRequests.add(this);
+        }
+        
+        return originalXHRSend.call(this, ...args);
+    };
+
+    try {
+        await Promise.all(assetList.map(async ({ asset, size }) => {
+            if (!app.assets.get(asset.id)) {
+                app.assets.add(asset);
+            }
+            
             await new Promise((resolve) => {
                 asset.once('load', () => resolve());
-                asset.once('error', (e) => { console.error('[gsplat] load error', asset.name, e); resolve(); });
+                asset.once('error', (e) => {
+                    console.error(`[${asset.type}] load error`, asset.name, e);
+                    resolve();
+                });
                 app.assets.load(asset);
             });
-            return;
+        }));
+        
+        while (activeRequests.size > 0) {
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
-
-        const buffer = await fetchWithProgress(asset.file.url, size, (delta) => bump(delta));
-        const file = new File([buffer], asset.name);
-        const fileUrl = URL.createObjectURL(file);
-        asset.file.url = fileUrl;
-
-        if (!app.assets.get(asset.id)) app.assets.add(asset);
-        await new Promise((resolve) => {
-            asset.once('load', resolve);
-            asset.once('error', (e) => { console.error('[asset] load error', asset.name, e); resolve(); });
-            app.assets.load(asset);
-        });
-    }));
+    } finally {
+        XMLHttpRequest.prototype.open = originalXHROpen;
+        XMLHttpRequest.prototype.send = originalXHRSend;
+    }
 
     onProgress?.(1);
     onComplete?.();

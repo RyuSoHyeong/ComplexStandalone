@@ -1,22 +1,20 @@
-// orbitCamera.js
 var OrbitCamera = pc.createScript('orbitCamera');
 
-// Main config
-OrbitCamera.attributes.add('portraitDistance', { type: 'number', default: 7 });
-OrbitCamera.attributes.add('portraitMinDistance', { type: 'number', default: 5 });
-OrbitCamera.attributes.add('portraitMaxDistance', { type: 'number', default: 9 });
+OrbitCamera.attributes.add('portraitDistance', { type: 'number', default: 24 });
+OrbitCamera.attributes.add('portraitMinDistance', { type: 'number', default: 12 });
+OrbitCamera.attributes.add('portraitMaxDistance', { type: 'number', default: 30 });
 
-OrbitCamera.attributes.add('landscapeDistance', { type: 'number', default: 7 });
-OrbitCamera.attributes.add('landscapeMinDistance', { type: 'number', default: 5 });
-OrbitCamera.attributes.add('landscapeMaxDistance', { type: 'number', default: 9 });
+OrbitCamera.attributes.add('landscapeDistance', { type: 'number', default: 18 });
+OrbitCamera.attributes.add('landscapeMinDistance', { type: 'number', default: 12 });
+OrbitCamera.attributes.add('landscapeMaxDistance', { type: 'number', default: 24 });
 
-OrbitCamera.attributes.add('amenitiesLandscapeDistance', { type: 'number', default: 5 });
+OrbitCamera.attributes.add('amenitiesLandscapeDistance', { type: 'number', default: 7 });
 OrbitCamera.attributes.add('amenitiesLandscapeMinDistance', { type: 'number', default: 5 });
 OrbitCamera.attributes.add('amenitiesLandscapeMaxDistance', { type: 'number', default: 9 });
 
-OrbitCamera.attributes.add('amenitiesPortraitDistance', { type: 'number', default: 5 });
+OrbitCamera.attributes.add('amenitiesPortraitDistance', { type: 'number', default: 7 });
 OrbitCamera.attributes.add('amenitiesPortraitMinDistance', { type: 'number', default: 5 });
-OrbitCamera.attributes.add('amenitiesPortraitMaxDistance', { type: 'number', default: 9 });
+OrbitCamera.attributes.add('amenitiesPortraitMaxDistance', { type: 'number', default: 14 });
 
 OrbitCamera.attributes.add('rotationSpeed', { type: 'number', default: 0.3 });
 OrbitCamera.attributes.add('zoomSpeed', { type: 'number', default: 0.5 });
@@ -29,7 +27,7 @@ OrbitCamera.attributes.add('autoRotateDelay', { type: 'number', default: 3 });
 
 OrbitCamera.attributes.add('mouseRotationSensitivity', { type: 'number', default: 0.2});
 OrbitCamera.attributes.add('touchRotationSensitivity', { type: 'number', default: 0.6});
-OrbitCamera.attributes.add('mouseZoomSensitivity', { type: 'number', default: 0.2});
+OrbitCamera.attributes.add('mouseZoomSensitivity', { type: 'number', default: 0.5});
 OrbitCamera.attributes.add('touchZoomSensitivity', { type: 'number', default: 5});
 
 OrbitCamera.prototype.initialize = function () {
