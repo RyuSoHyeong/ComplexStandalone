@@ -32,12 +32,12 @@ const assetMap = {
     AddBuilding_Glass2: new pc.Asset("AddBuilding_Glass2", "container", { url: "assets/models/AddBuilding_Glass2.glb" }),
     ShaderFrag: new pc.Asset("ShaderFrag", "shader", { url: "assets/shaders/splat.frag" }),
     ShaderVert: new pc.Asset("ShaderVert", "shader", { url: "assets/shaders/splat.vert" }),
-    env_px: new pc.Asset("env_px", "texture", { url: "assets/images/cubemap_1/posx.jpg" }),
-    env_nx: new pc.Asset("env_nx", "texture", { url: "assets/images/cubemap_1/negx.jpg" }),
-    env_py: new pc.Asset("env_py", "texture", { url: "assets/images/cubemap_1/posy.jpg" }),
-    env_ny: new pc.Asset("env_ny", "texture", { url: "assets/images/cubemap_1/negy.jpg" }),
-    env_pz: new pc.Asset("env_pz", "texture", { url: "assets/images/cubemap_1/posz.jpg" }),
-    env_nz: new pc.Asset("env_nz", "texture", { url: "assets/images/cubemap_1/negz.jpg" })
+    env_px: new pc.Asset("env_px", "texture", { url: "assets/images/cubemap_1/px.png" }),
+    env_nx: new pc.Asset("env_nx", "texture", { url: "assets/images/cubemap_1/nx.png" }),
+    env_py: new pc.Asset("env_py", "texture", { url: "assets/images/cubemap_1/py.png" }),
+    env_ny: new pc.Asset("env_ny", "texture", { url: "assets/images/cubemap_1/ny.png" }),
+    env_pz: new pc.Asset("env_pz", "texture", { url: "assets/images/cubemap_1/pz.png" }),
+    env_nz: new pc.Asset("env_nz", "texture", { url: "assets/images/cubemap_1/nz.png" })
 };
 
 const scriptAssets = [
@@ -84,7 +84,6 @@ function startApp() {
         WhiteMat.diffuse = new pc.Color(1, 1, 1);
         WhiteMat.emissive = new pc.Color(1, 1, 1);
         const ReflectMat = new pc.StandardMaterial();
-        const ReflectMatDark = new pc.StandardMaterial();
 
         const getSrc = (a) => {
             const t = a.resource;
@@ -104,9 +103,9 @@ function startApp() {
         if (size) {
             const cubemap = new pc.Texture(app.graphicsDevice, {
                 cubemap: true,
-                width: size,
-                height: size,
-                format: pc.PIXELFORMAT_RGB8,
+                width: 256,
+                height: 256,
+                format: pc.PIXELFORMAT_SRGBA,
                 mipmaps: true
             });
 
@@ -121,26 +120,14 @@ function startApp() {
             ReflectMat.useSkybox = false;
             ReflectMat.useMetalness = true;
             ReflectMat.metalness = 1.0;
-            ReflectMat.glossiness = 1;
+            ReflectMat.shininess = 0;
             ReflectMat.diffuse = new pc.Color(0.45, 0.45, 0.45);
 
             ReflectMat.cubeMap = cubemap;
             ReflectMat.cubeMapProjection = pc.CUBEPROJ_BOX;
-            ReflectMat.reflectivity = 5;
-            ReflectMat.cubeMapProjectionBox = new pc.BoundingBox( new pc.Vec3(5.91, 3.52, 2.26), new pc.Vec3(8, 8, 8));
+            ReflectMat.reflectivity = 8;
+            ReflectMat.cubeMapProjectionBox = new pc.BoundingBox( new pc.Vec3(9, -13, 1.5), new pc.Vec3(32, 32, 32));
             ReflectMat.update();
-
-            ReflectMatDark.useSkybox = false;
-            ReflectMatDark.useMetalness = true;
-            ReflectMatDark.metalness = 1.0;
-            ReflectMatDark.glossiness = 1;
-            ReflectMatDark.diffuse = new pc.Color(0.35, 0.35, 0.35);
-
-            ReflectMatDark.cubeMap = cubemap;
-            ReflectMatDark.cubeMapProjection = pc.CUBEPROJ_BOX;
-            ReflectMatDark.reflectivity = 1;
-            ReflectMatDark.cubeMapProjectionBox = new pc.BoundingBox( new pc.Vec3(5.91, 3.52, 2.26), new pc.Vec3(8, 8, 8));
-            ReflectMatDark.update();
         }
 
         app.scene.ambientLight = new pc.Color(1, 1, 1);
@@ -195,10 +182,10 @@ function startApp() {
         GlassMain.findComponents('render').forEach(function (r) {
             if (r.meshInstances && r.meshInstances.length) {
                 r.meshInstances.forEach(function (mi) {
-                    mi.material = ReflectMatDark;
+                    mi.material = ReflectMat;
                 });
             } else {
-                r.material = ReflectMatDark;
+                r.material = ReflectMat;
             }
         });
         Glass.addChild(GlassMain);
@@ -213,10 +200,10 @@ function startApp() {
         GlassAdd.findComponents('render').forEach(function (r) {
             if (r.meshInstances && r.meshInstances.length) {
                 r.meshInstances.forEach(function (mi) {
-                    mi.material = ReflectMatDark;
+                    mi.material = ReflectMat;
                 });
             } else {
-                r.material = ReflectMatDark;
+                r.material = ReflectMat;
             }
         });
         Glass.addChild(GlassAdd);
