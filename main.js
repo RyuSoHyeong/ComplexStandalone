@@ -125,7 +125,7 @@ function startApp() {
 
             ReflectMat.cubeMap = cubemap;
             ReflectMat.cubeMapProjection = pc.CUBEPROJ_BOX;
-            ReflectMat.reflectivity = 8;
+            ReflectMat.reflectivity = 6;
             ReflectMat.cubeMapProjectionBox = new pc.BoundingBox( new pc.Vec3(9, -13, 1.5), new pc.Vec3(32, 32, 32));
             ReflectMat.update();
         }
